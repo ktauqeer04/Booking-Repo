@@ -2,6 +2,8 @@ const axios = require('axios');
 const db = require('../models');
 const AppError = require('../utils/errors/app-error');
 const BookingRepository = require('../repositories/booking-repository');
+const { enums } = require('../utils/common');
+const { BOOKED } = enums.BOOKING_STATUS;
 const { DEV_URL } = require('../config/server-config');
 const { StatusCodes } = require('http-status-codes');
 
@@ -34,7 +36,7 @@ const createBooking = async (data) => {
 
         console.log(data.flightId);
 
-        
+
         await axios.patch(`${DEV_URL}/api/v1/flights/${data.flightId}/seats`, {
             seats: data.noOfSeats,
             decrease: true
@@ -44,11 +46,43 @@ const createBooking = async (data) => {
         return flightData;
 
     } catch (error) {
+
         await transaction.rollback();
         throw error;
+
     }
 } 
 
+
+const makePayment = async (data) => {
+
+    const transaction = await db.sequelize.transaction();
+
+    try {
+        
+             bookingDetails = await bookingRespository.get(data.bookingId, transaction);
+        if(data.userId != bookingDetails.userId) {
+            throw new AppError('Wrong userId', StatusCodes.UNAUTHORIZED);
+        }
+
+        if(data.price != bookingDetails.totalCost){
+            throw new AppError('Payment Not Sufficient', StatusCodes.BAD_REQUEST);
+        }
+
+        const bookingUpdate = await bookingRespository.update(data.bookingId, {status: BOOKED}, transaction);
+
+        await transaction.commit();
+
+    } catch (error) {
+
+        await transaction.rollback();
+        throw error;
+
+    }
+}
+
+
 module.exports = {
-    createBooking
+    createBooking,
+    makePayment
 }
