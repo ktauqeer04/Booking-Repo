@@ -8,6 +8,11 @@ class BookingRepository extends crudRespository{
 
     // custom booking operations
 
+    async createBooking(data, transaction) {
+        const response = await Booking.create(data, {transaction: transaction});
+        return response;
+    }
+
 }
 
 

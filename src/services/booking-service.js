@@ -1,7 +1,12 @@
 const axios = require('axios');
 const db = require('../models');
-const { StatusCodes } = require('http-status-codes');
 const AppError = require('../utils/errors/app-error');
+const BookingRepository = require('../repositories/booking-repository');
+const { DEV_URL } = require('../config/server-config');
+const { StatusCodes } = require('http-status-codes');
+
+const bookingRespository = new BookingRepository();
+ 
 
 const createBooking = async (data) => {
 
@@ -9,17 +14,38 @@ const createBooking = async (data) => {
 
     try {
         
-        const flight = await axios.get(`http://localhost:4000/api/v1/flights/${data.flightId}`);
+        const flight = await axios.get(`${DEV_URL}/api/v1/flights/${data.flightId}`);
         const flightData = flight.data.data;
         if(data.noOfSeats > flightData.totalSeats){
             throw new AppError('Flight Seats Unavailable right Now', StatusCodes.BAD_REQUEST);
         }
+
+        const totalBill = data.noOfSeats * flightData.price;
+
+        console.log(data)
+
+        const payload = {
+            ...data,
+            totalCost: totalBill
+        }
+
+
+        const booking = await bookingRespository.createBooking(payload, transaction);
+
+        console.log(data.flightId);
+
+        
+        await axios.patch(`${DEV_URL}/api/v1/flights/${data.flightId}/seats`, {
+            seats: data.noOfSeats,
+            decrease: true
+        })
+
         await transaction.commit();
         return flightData;
 
     } catch (error) {
         await transaction.rollback();
-        console.log(error);
+        throw error;
     }
 } 
 
