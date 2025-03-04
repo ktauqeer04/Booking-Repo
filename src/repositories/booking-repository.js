@@ -23,7 +23,7 @@ class BookingRepository extends crudRespository{
 
         const response = await Booking.findByPk(data, {transaction: transaction});
 
-        console.log("response is", response);
+        // console.log("response is", response);
         
 
         if(!response){
@@ -34,7 +34,7 @@ class BookingRepository extends crudRespository{
 
     }
 
-    async update(id, data, transaction){
+    async updateWithTransaction(id, data, transaction){
             
         const response = await Booking.update(data, {
             where:{

@@ -3,12 +3,16 @@ const db = require('../models');
 const AppError = require('../utils/errors/app-error');
 const BookingRepository = require('../repositories/booking-repository');
 const { enums } = require('../utils/common');
-const { BOOKED } = enums.BOOKING_STATUS;
+const { BOOKED, CANCELLED} = enums.BOOKING_STATUS;
 const { DEV_URL } = require('../config/server-config');
 const { StatusCodes } = require('http-status-codes');
 
+
+
 const bookingRespository = new BookingRepository();
  
+
+
 
 const createBooking = async (data) => {
 
@@ -60,7 +64,16 @@ const makePayment = async (data) => {
 
     try {
         
-             bookingDetails = await bookingRespository.get(data.bookingId, transaction);
+        bookingDetails = await bookingRespository.get(data.bookingId, transaction);
+
+        const bookingTime = new Date(bookingDetails.createdAt);
+        const currentTime = new Date();
+
+        if(currentTime - bookingTime > 60000){
+            await cancelBooking(data.bookingId);
+            throw new AppError('The booking has Expired', StatusCodes.BAD_REQUEST);
+        }
+
         if(data.userId != bookingDetails.userId) {
             throw new AppError('Wrong userId', StatusCodes.UNAUTHORIZED);
         }
@@ -69,7 +82,7 @@ const makePayment = async (data) => {
             throw new AppError('Payment Not Sufficient', StatusCodes.BAD_REQUEST);
         }
 
-        const bookingUpdate = await bookingRespository.update(data.bookingId, {status: BOOKED}, transaction);
+        await bookingRespository.update(data.bookingId, {status: BOOKED}, transaction);
 
         await transaction.commit();
 
@@ -78,6 +91,38 @@ const makePayment = async (data) => {
         await transaction.rollback();
         throw error;
 
+    }
+
+}
+
+
+const cancelBooking = async (bookingID) => {
+
+    const transaction = await db.sequelize.transaction();
+
+    try {
+        
+        console.log("bookingID is", bookingID);
+        
+        const bookingDetails = await bookingRespository.get(bookingID, transaction);
+        console.log( "booking details are -------> " ,bookingDetails);
+        if(bookingDetails.status == CANCELLED || bookingDetails.status == BOOKED){
+            await transaction.rollback();
+            return true;
+        } 
+
+
+        await axios.patch(`${DEV_URL}/api/v1/flights/${bookingDetails.flightId}/seats`, {
+            seats: bookingDetails.noOfSeats,
+            decrease: false
+        });
+        
+        await bookingRespository.updateWithTransaction(bookingID, {status: CANCELLED}, transaction);
+        await transaction.commit();
+
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
     }
 }
 

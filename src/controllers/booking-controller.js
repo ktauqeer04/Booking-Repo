@@ -32,10 +32,10 @@ const payment = async (req, res) => {
         const { price, bookingId, userId } = req.body;
 
         console.log({price, bookingId, userId});
-        
+
         const paymentDetails = await makePayment({ price, bookingId, userId });
 
-        console.log(paymentDetails);
+        // console.log(paymentDetails);
         
         SuccessResponse.data = paymentDetails;
         
