@@ -6,12 +6,11 @@ const { enums } = require('../utils/common');
 const { BOOKED, CANCELLED} = enums.BOOKING_STATUS;
 const { DEV_URL } = require('../config/server-config');
 const { StatusCodes } = require('http-status-codes');
-
+const { connectQueue } = require('../utils/queue/sender');
 
 
 const bookingRespository = new BookingRepository();
  
-
 
 
 const createBooking = async (data) => {
@@ -36,15 +35,20 @@ const createBooking = async (data) => {
         }
 
 
-        const booking = await bookingRespository.createBooking(payload, transaction);
+        // const booking = await bookingRespository.createBooking(payload, transaction);
 
         console.log(data.flightId);
 
+        // send data through queue
 
-        await axios.patch(`${DEV_URL}/api/v1/flights/${data.flightId}/seats`, {
-            seats: data.noOfSeats,
-            decrease: true
-        })
+
+        const Queue = await connectQueue(payload)
+
+
+        // await axios.patch(`${DEV_URL}/api/v1/flights/${data.flightId}/seats`, {
+        //     seats: data.noOfSeats,
+        //     decrease: true
+        // })
 
         await transaction.commit();
         return flightData;
