@@ -35,14 +35,19 @@ const createBooking = async (data) => {
         }
 
 
-        // const booking = await bookingRespository.createBooking(payload, transaction);
+        const booking = await bookingRespository.createBooking(payload, transaction);
 
         console.log(data.flightId);
 
         // send data through queue
 
+        const anotherPayload = {
+            flightId: data.flightId,
+            seats: data.noOfSeats,
+            decrease: true
+        }
 
-        const Queue = await connectQueue(payload)
+        const Queue = await connectQueue(anotherPayload)
 
 
         // await axios.patch(`${DEV_URL}/api/v1/flights/${data.flightId}/seats`, {
