@@ -47,7 +47,7 @@ const createBooking = async (data) => {
             decrease: true
         }
 
-        const Queue = await connectQueue(anotherPayload)
+        await connectQueue(anotherPayload);
 
 
         // await axios.patch(`${DEV_URL}/api/v1/flights/${data.flightId}/seats`, {
@@ -121,11 +121,19 @@ const cancelBooking = async (bookingID) => {
         } 
 
 
-        await axios.patch(`${DEV_URL}/api/v1/flights/${bookingDetails.flightId}/seats`, {
+        // await axios.patch(`${DEV_URL}/api/v1/flights/${bookingDetails.flightId}/seats`, {
+        //     seats: bookingDetails.noOfSeats,
+        //     decrease: false
+        // });
+
+        const anotherPayload = {
+            flightId: bookingDetails.flightId,
             seats: bookingDetails.noOfSeats,
             decrease: false
-        });
+        }
         
+        await connectQueue(anotherPayload);
+
         await bookingRespository.updateWithTransaction(bookingID, {status: CANCELLED}, transaction);
         await transaction.commit();
 
