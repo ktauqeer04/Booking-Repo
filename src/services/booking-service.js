@@ -6,7 +6,7 @@ const { enums } = require('../utils/common');
 const { BOOKED, CANCELLED} = enums.BOOKING_STATUS;
 const { DEV_URL } = require('../config/server-config');
 const { StatusCodes } = require('http-status-codes');
-const { connectQueue } = require('../utils/queue/sender');
+const { connectQueue, sendEmail } = require('../utils/queue/sender');
 
 
 const bookingRespository = new BookingRepository();
@@ -73,7 +73,7 @@ const makePayment = async (data) => {
 
     try {
         
-        bookingDetails = await bookingRespository.get(data.bookingId, transaction);
+        const bookingDetails = await bookingRespository.get(data.bookingId, transaction);
 
         const bookingTime = new Date(bookingDetails.createdAt);
         const currentTime = new Date();
@@ -92,6 +92,16 @@ const makePayment = async (data) => {
         }
 
         await bookingRespository.update(data.bookingId, {status: BOOKED}, transaction);
+
+        const payload = {
+            recepientEmail: 'itsinstakillofficial@gmail.com',
+            subject: 'Flight Booked',
+            content: `flight of flight Id ${bookingDetails.flightId} is Booked Successfully`
+        }    
+
+        sendEmail(payload);
+        
+        console.log(bookingDetails);
 
         await transaction.commit();
 

@@ -1,6 +1,6 @@
-import { connect } from "amqplib";
+const { connect } = require('amqplib');
 
-export class RabbitMQClient {
+class RabbitMQClient {
 
   constructor(exchangeName, bindingKey, data) {
     this.exchangeName = exchangeName;
@@ -33,4 +33,4 @@ export class RabbitMQClient {
 
 }
 
-export default RabbitMQClient;
+module.exports = RabbitMQClient;
