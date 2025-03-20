@@ -18,9 +18,12 @@ const createBooking = async (data) => {
     const transaction = await db.sequelize.transaction();
 
     try {
+
+        console.log("data is ", data);
         
         const flight = await axios.get(`${DEV_URL}/api/v1/flights/${data.flightId}`);
         const flightData = flight.data.data;
+        
         if(data.noOfSeats > flightData.totalSeats){
             throw new AppError('Flight Seats Unavailable right Now', StatusCodes.BAD_REQUEST);
         }
